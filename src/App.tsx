@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import NewAnalysis from "./pages/NewAnalysis";
 import Reports from "./pages/Reports";
 import Results from "./pages/Results";
 import Profile from "./pages/Profile";
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/new-analysis" element={<NewAnalysis />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/results/:id" element={<Results />} />
               <Route path="/profile" element={<Profile />} />
