@@ -7,14 +7,12 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { StatsCard } from '@/components/StatsCard';
 import { AnalysisCard } from '@/components/AnalysisCard';
-import { UploadModal } from '@/components/UploadModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAnalysesFromStorage, Analysis } from '@/data/mockAnalyses';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
 
   useEffect(() => {
@@ -35,11 +33,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (!uploadModalOpen && user) {
-      refreshAnalyses();
-    }
-  }, [uploadModalOpen, user]);
 
   if (isLoading) {
     return (
@@ -77,7 +70,7 @@ const Dashboard: React.FC = () => {
               <Button
                 size="lg"
                 className="mt-6 gap-2"
-                onClick={() => setUploadModalOpen(true)}
+                onClick={() => navigate('/new-analysis')}
               >
                 <Plus className="h-5 w-5" />
                 New Analysis
@@ -136,7 +129,7 @@ const Dashboard: React.FC = () => {
                   </p>
                   <Button
                     className="mt-4"
-                    onClick={() => setUploadModalOpen(true)}
+                    onClick={() => navigate('/new-analysis')}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     New Analysis
@@ -155,11 +148,6 @@ const Dashboard: React.FC = () => {
       </main>
 
       <Footer />
-      
-      <UploadModal
-        open={uploadModalOpen}
-        onOpenChange={setUploadModalOpen}
-      />
     </div>
   );
 };
