@@ -5,23 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
-import { addAnalysis, boneRegions } from '@/data/mockAnalyses';
+import { addAnalysis } from '@/data/mockAnalyses';
 
 const NewAnalysis: React.FC = () => {
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
-  const [xrayType, setXrayType] = useState<'chest' | 'bone'>('chest');
-  const [boneRegion, setBoneRegion] = useState<string>('');
   const [symptoms, setSymptoms] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -70,15 +61,11 @@ const NewAnalysis: React.FC = () => {
     if (!file || !user) return;
     
     setIsSubmitting(true);
-    
-    // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     const newAnalysis = addAnalysis({
       userId: user.id,
       imageUrl: preview || '/placeholder.svg',
-      xrayType,
-      boneRegion: xrayType === 'bone' ? boneRegion as any : undefined,
       symptoms: symptoms || undefined,
       detectedConditions: [],
     });
@@ -107,7 +94,6 @@ const NewAnalysis: React.FC = () => {
       <Header />
       
       <main className="flex-1">
-        {/* Hero Section */}
         <section className="relative overflow-hidden border-b bg-gradient-to-br from-primary/5 via-secondary/5 to-background">
           <div className="container py-8 md:py-12">
             <Button
@@ -121,15 +107,13 @@ const NewAnalysis: React.FC = () => {
             <div className="max-w-2xl">
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight flex items-center gap-3">
                 <FileImage className="h-8 w-8 text-primary" />
-                New X-Ray Analysis
+                New Chest X-Ray Analysis
               </h1>
               <p className="mt-3 text-lg text-muted-foreground">
-                Upload your X-ray image for AI-powered analysis. Our system will detect potential conditions and generate a comprehensive report.
+                Upload your chest X-ray image for AI-powered analysis. Our system will detect potential conditions and generate a comprehensive report.
               </p>
             </div>
           </div>
-          
-          {/* Decorative elements */}
           <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
           <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-secondary/10 blur-3xl" />
         </section>
@@ -138,48 +122,15 @@ const NewAnalysis: React.FC = () => {
           <div className="max-w-2xl mx-auto">
             <Card>
               <CardHeader>
-                <CardTitle>Upload X-Ray Image</CardTitle>
+                <CardTitle>Upload Chest X-Ray Image</CardTitle>
                 <CardDescription>
                   Supported formats: PNG, JPEG, and DICOM files
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* X-ray Type Selection */}
-                <div className="space-y-2">
-                  <Label>X-Ray Type *</Label>
-                  <Select value={xrayType} onValueChange={(v) => setXrayType(v as 'chest' | 'bone')}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="chest">Chest X-ray</SelectItem>
-                      <SelectItem value="bone">Bone X-ray (Upper Limb)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Bone Region Selection */}
-                {xrayType === 'bone' && (
-                  <div className="space-y-2">
-                    <Label>Bone Region *</Label>
-                    <Select value={boneRegion} onValueChange={setBoneRegion}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select bone region" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {boneRegions.map((region) => (
-                          <SelectItem key={region.value} value={region.value}>
-                            {region.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
                 {/* Upload Zone */}
                 <div className="space-y-2">
-                  <Label>X-Ray Image *</Label>
+                  <Label>Chest X-Ray Image *</Label>
                   <div
                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                     onDragLeave={() => setIsDragging(false)}
@@ -229,7 +180,7 @@ const NewAnalysis: React.FC = () => {
                           <Upload className="h-8 w-8 text-primary" />
                         </div>
                         <p className="text-lg font-medium">
-                          Drag & drop your X-ray here
+                          Drag & drop your chest X-ray here
                         </p>
                         <p className="text-muted-foreground mt-1">
                           or{' '}
@@ -255,7 +206,7 @@ const NewAnalysis: React.FC = () => {
                 <div className="space-y-2">
                   <Label>Symptoms (Optional)</Label>
                   <Textarea
-                    placeholder="Describe any symptoms you're experiencing, such as pain, discomfort, breathing difficulties, etc."
+                    placeholder="Describe any symptoms you're experiencing, such as cough, fever, breathing difficulties, etc."
                     value={symptoms}
                     onChange={(e) => setSymptoms(e.target.value)}
                     rows={4}
@@ -277,7 +228,7 @@ const NewAnalysis: React.FC = () => {
                   </Button>
                   <Button
                     onClick={handleSubmit}
-                    disabled={!file || (xrayType === 'bone' && !boneRegion) || isSubmitting}
+                    disabled={!file || isSubmitting}
                     className="flex-1 gap-2"
                   >
                     {isSubmitting ? (
@@ -293,25 +244,15 @@ const NewAnalysis: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Info Cards */}
-            <div className="grid md:grid-cols-2 gap-4 mt-6">
-              <Card className="bg-muted/50">
-                <CardContent className="pt-6">
-                  <h3 className="font-semibold mb-2">Chest X-ray Analysis</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Detects conditions like Pneumonia, COVID-19, TB, Cardiomegaly, Effusion, and 12+ other thoracic abnormalities.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="bg-muted/50">
-                <CardContent className="pt-6">
-                  <h3 className="font-semibold mb-2">Bone X-ray Analysis</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Analyzes upper limb X-rays (Wrist, Hand, Elbow, Forearm, Humerus, Shoulder) for musculoskeletal abnormalities.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Info Card */}
+            <Card className="bg-muted/50 mt-6">
+              <CardContent className="pt-6">
+                <h3 className="font-semibold mb-2">Chest X-Ray Analysis</h3>
+                <p className="text-sm text-muted-foreground">
+                  Our AI model analyzes chest X-rays to detect: Normal, Pneumonia, COVID-19, and Tuberculosis.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>

@@ -1,15 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileImage, Search, Filter } from 'lucide-react';
+import { FileImage, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { AnalysisCard } from '@/components/AnalysisCard';
@@ -21,7 +14,7 @@ const Reports: React.FC = () => {
   const { user, isLoading } = useAuth();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<string>('all');
+  
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -42,8 +35,7 @@ const Reports: React.FC = () => {
       .join(' ')
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' || analysis.xrayType === filterType;
-    return matchesSearch && matchesType;
+    return matchesSearch;
   });
 
   return (
@@ -75,17 +67,7 @@ const Reports: React.FC = () => {
                     className="pl-10"
                   />
                 </div>
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="w-32">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="chest">Chest</SelectItem>
-                    <SelectItem value="bone">Bone</SelectItem>
-                  </SelectContent>
-                </Select>
+                
               </div>
             </div>
           </CardHeader>
@@ -95,8 +77,8 @@ const Reports: React.FC = () => {
                 <FileImage className="h-16 w-16 mx-auto text-muted-foreground/50" />
                 <h3 className="mt-4 text-lg font-medium">No reports found</h3>
                 <p className="text-muted-foreground mt-1">
-                  {searchTerm || filterType !== 'all'
-                    ? 'Try adjusting your filters'
+                  {searchTerm
+                    ? 'Try adjusting your search'
                     : 'Your analyses will appear here'}
                 </p>
               </div>

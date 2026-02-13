@@ -10,15 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
-import { addAnalysis, boneRegions } from '@/data/mockAnalyses';
+import { addAnalysis } from '@/data/mockAnalyses';
 
 interface UploadModalProps {
   open: boolean;
@@ -28,8 +21,6 @@ interface UploadModalProps {
 export const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [xrayType, setXrayType] = useState<'chest' | 'bone'>('chest');
-  const [boneRegion, setBoneRegion] = useState<string>('');
   const [symptoms, setSymptoms] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -72,15 +63,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange }) 
     if (!file || !user) return;
     
     setIsSubmitting(true);
-    
-    // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     const newAnalysis = addAnalysis({
       userId: user.id,
       imageUrl: preview || '/placeholder.svg',
-      xrayType,
-      boneRegion: xrayType === 'bone' ? boneRegion as any : undefined,
       symptoms: symptoms || undefined,
       detectedConditions: [],
     });
@@ -94,8 +81,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange }) 
   const resetForm = () => {
     setFile(null);
     setPreview(null);
-    setXrayType('chest');
-    setBoneRegion('');
     setSymptoms('');
   };
 
@@ -110,47 +95,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange }) 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileImage className="h-5 w-5 text-primary" />
-            New X-Ray Analysis
+            New Chest X-Ray Analysis
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* X-ray Type Selection */}
-          <div className="space-y-2">
-            <Label>X-Ray Type</Label>
-            <Select value={xrayType} onValueChange={(v) => setXrayType(v as 'chest' | 'bone')}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="chest">Chest X-ray</SelectItem>
-                <SelectItem value="bone">Bone X-ray</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Bone Region Selection */}
-          {xrayType === 'bone' && (
-            <div className="space-y-2">
-              <Label>Bone Region</Label>
-              <Select value={boneRegion} onValueChange={setBoneRegion}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select bone region" />
-                </SelectTrigger>
-                <SelectContent>
-                  {boneRegions.map((region) => (
-                    <SelectItem key={region.value} value={region.value}>
-                      {region.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
           {/* Upload Zone */}
           <div className="space-y-2">
-            <Label>X-Ray Image</Label>
+            <Label>Chest X-Ray Image</Label>
             <div
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
@@ -194,7 +146,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange }) 
                 <div className="text-center">
                   <Upload className="h-10 w-10 mx-auto text-muted-foreground" />
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Drag & drop your X-ray image here, or{' '}
+                    Drag & drop your chest X-ray image here, or{' '}
                     <label className="text-primary cursor-pointer hover:underline">
                       browse
                       <input
@@ -227,7 +179,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ open, onOpenChange }) 
           {/* Submit Button */}
           <Button
             onClick={handleSubmit}
-            disabled={!file || (xrayType === 'bone' && !boneRegion) || isSubmitting}
+            disabled={!file || isSubmitting}
             className="w-full"
           >
             {isSubmitting ? 'Analyzing...' : 'Start Analysis'}

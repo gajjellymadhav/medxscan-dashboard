@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAnalysesFromStorage, Analysis, boneRegions } from '@/data/mockAnalyses';
+import { getAnalysesFromStorage, Analysis } from '@/data/mockAnalyses';
 
 const Results: React.FC = () => {
   const { id } = useParams();
@@ -69,7 +69,6 @@ const Results: React.FC = () => {
   }
 
   const isNormal = analysis.detectedConditions.includes('Normal');
-  const getBoneRegionLabel = (region?: string) => boneRegions.find(r => r.value === region)?.label || region;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -89,9 +88,7 @@ const Results: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>X-Ray Analysis</span>
-                  <Badge variant={analysis.xrayType === 'chest' ? 'default' : 'secondary'}>
-                    {analysis.xrayType === 'chest' ? 'Chest X-ray' : `Bone - ${getBoneRegionLabel(analysis.boneRegion)}`}
-                  </Badge>
+                  <Badge variant="default">Chest X-ray</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
