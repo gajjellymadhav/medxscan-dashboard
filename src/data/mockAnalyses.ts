@@ -2,52 +2,31 @@ export interface Analysis {
   id: string;
   userId: string;
   imageUrl: string;
-  xrayType: 'chest' | 'bone';
-  boneRegion?: 'wrist' | 'hand' | 'elbow' | 'forearm' | 'humerus' | 'shoulder';
   symptoms?: string;
   detectedConditions: string[];
   createdAt: string;
   reportGenerated: boolean;
 }
 
-export const chestConditions = [
-  'Atelectasis', 'Cardiomegaly', 'Consolidation', 'Edema', 'Effusion',
-  'Emphysema', 'Fibrosis', 'Hernia', 'Infiltration', 'Mass', 'Nodule',
-  'Pleural Thickening', 'Pneumonia', 'Pneumothorax', 'COVID-19 patterns',
-  'TB patterns', 'Normal'
-];
+export const chestConditions = ['Normal', 'Pneumonia', 'COVID-19', 'Tuberculosis'];
 
-export const boneConditions = ['Musculoskeletal Abnormality', 'Normal'];
-
-export const boneRegions = [
-  { value: 'wrist', label: 'Wrist' },
-  { value: 'hand', label: 'Hand/Fingers' },
-  { value: 'elbow', label: 'Elbow' },
-  { value: 'forearm', label: 'Forearm' },
-  { value: 'humerus', label: 'Humerus' },
-  { value: 'shoulder', label: 'Shoulder' },
-];
-
-const getRandomConditions = (type: 'chest' | 'bone'): string[] => {
-  const conditions = type === 'chest' ? chestConditions : boneConditions;
-  const isNormal = Math.random() > 0.7;
-  
+const getRandomConditions = (): string[] => {
+  const isNormal = Math.random() > 0.6;
   if (isNormal) return ['Normal'];
   
-  const numConditions = type === 'chest' ? Math.floor(Math.random() * 3) + 1 : 1;
-  const shuffled = conditions.filter(c => c !== 'Normal').sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, numConditions);
+  const abnormal = chestConditions.filter(c => c !== 'Normal');
+  const shuffled = abnormal.sort(() => Math.random() - 0.5);
+  return [shuffled[0]];
 };
 
 export const generateMockAnalyses = (userId: string): Analysis[] => {
-  const analyses: Analysis[] = [
+  return [
     {
       id: '1',
       userId,
       imageUrl: '/placeholder.svg',
-      xrayType: 'chest',
       symptoms: 'Persistent cough, mild fever',
-      detectedConditions: ['Pneumonia', 'Infiltration'],
+      detectedConditions: ['Pneumonia'],
       createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
       reportGenerated: true,
     },
@@ -55,10 +34,8 @@ export const generateMockAnalyses = (userId: string): Analysis[] => {
       id: '2',
       userId,
       imageUrl: '/placeholder.svg',
-      xrayType: 'bone',
-      boneRegion: 'wrist',
-      symptoms: 'Pain after fall',
-      detectedConditions: ['Musculoskeletal Abnormality'],
+      symptoms: 'Shortness of breath, fatigue',
+      detectedConditions: ['COVID-19'],
       createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
       reportGenerated: true,
     },
@@ -66,13 +43,11 @@ export const generateMockAnalyses = (userId: string): Analysis[] => {
       id: '3',
       userId,
       imageUrl: '/placeholder.svg',
-      xrayType: 'chest',
       detectedConditions: ['Normal'],
       createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
       reportGenerated: true,
     },
   ];
-  return analyses;
 };
 
 export const getAnalysesFromStorage = (userId: string): Analysis[] => {
@@ -91,7 +66,7 @@ export const addAnalysis = (analysis: Omit<Analysis, 'id' | 'createdAt' | 'repor
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
     reportGenerated: true,
-    detectedConditions: getRandomConditions(analysis.xrayType),
+    detectedConditions: getRandomConditions(),
   };
   
   const stored = localStorage.getItem('medxscan_analyses');

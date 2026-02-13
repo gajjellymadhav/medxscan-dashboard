@@ -76,7 +76,7 @@ const Index: React.FC = () => {
             </div>
             <h3 className="text-lg font-semibold mb-2">Upload X-Ray</h3>
             <p className="text-sm text-muted-foreground">
-              Simply upload your chest or bone X-ray images in PNG, JPEG, or DICOM format
+              Simply upload your chest X-ray images in PNG, JPEG, or DICOM format
             </p>
           </div>
           
@@ -86,7 +86,7 @@ const Index: React.FC = () => {
             </div>
             <h3 className="text-lg font-semibold mb-2">AI Analysis</h3>
             <p className="text-sm text-muted-foreground">
-              Our deep learning models detect 17+ conditions including pneumonia, COVID-19, and more
+              Our deep learning models detect Pneumonia, COVID-19, Tuberculosis, and Normal conditions
             </p>
           </div>
           

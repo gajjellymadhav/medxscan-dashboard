@@ -5,17 +5,13 @@ import { FileText, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Analysis, boneRegions } from '@/data/mockAnalyses';
+import { Analysis } from '@/data/mockAnalyses';
 
 interface AnalysisCardProps {
   analysis: Analysis;
 }
 
 export const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis }) => {
-  const getBoneRegionLabel = (region?: string) => {
-    return boneRegions.find(r => r.value === region)?.label || region;
-  };
-
   const isNormal = analysis.detectedConditions.includes('Normal');
 
   return (
@@ -34,9 +30,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis }) => {
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant={analysis.xrayType === 'chest' ? 'default' : 'secondary'}>
-                    {analysis.xrayType === 'chest' ? 'Chest X-ray' : `Bone - ${getBoneRegionLabel(analysis.boneRegion)}`}
-                  </Badge>
+                  <Badge variant="default">Chest X-ray</Badge>
                   <span className="text-xs text-muted-foreground">
                     {format(new Date(analysis.createdAt), 'MMM d, yyyy')}
                   </span>
