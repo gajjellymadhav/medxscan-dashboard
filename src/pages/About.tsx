@@ -9,12 +9,12 @@ const features = [
   {
     icon: Brain,
     title: 'AI-Powered Diagnosis',
-    description: 'Deep learning models trained on NIH ChestX-ray14, COVIDx, and MURA datasets for accurate detection of thoracic and musculoskeletal abnormalities.',
+    description: 'Deep learning models trained on NIH ChestX-ray14, COVIDx, and TB datasets for accurate detection of chest X-ray abnormalities.',
   },
   {
     icon: FileText,
     title: 'Structured Reports',
-    description: 'Comprehensive diagnostic reports with Grad-CAM visualizations highlighting areas of concern in your X-ray images.',
+    description: 'Comprehensive diagnostic reports with Grad-CAM visualizations highlighting areas of concern in your chest X-ray images.',
   },
   {
     icon: MessageSquare,
@@ -29,12 +29,12 @@ const features = [
   {
     icon: Zap,
     title: 'Instant Results',
-    description: 'Get your X-ray analysis results in seconds, not days. Fast, accurate, and reliable diagnostics.',
+    description: 'Get your chest X-ray analysis results in seconds, not days. Fast, accurate, and reliable diagnostics.',
   },
   {
     icon: Activity,
-    title: 'Comprehensive Coverage',
-    description: 'Detects 17+ conditions including pneumonia, COVID-19 patterns, TB, and various musculoskeletal abnormalities.',
+    title: 'Chest X-Ray Analysis',
+    description: 'Detects Normal status, Pneumonia, COVID-19, and Tuberculosis in chest X-ray images with high accuracy.',
   },
 ];
 
