@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ArrowLeft, FileText, MessageSquare, Download, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, FileText, MessageSquare, Download, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,14 +10,33 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAnalysesFromStorage, Analysis } from '@/data/mockAnalyses';
+import { apiService } from '@/services/apiService';
+import { useAPI } from '@/hooks/useAPI';
+import { apiClient } from '@/api/client';
+import type { ChatMessageData, XRayPredictionData } from '@/types/api';
 
 const Results: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isLoading } = useAuth();
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [apiPrediction, setApiPrediction] = useState<XRayPredictionData | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+
+  const { isLoading: isChatLoading, execute: sendChatMessage } = useAPI<ChatMessageData>(
+    apiService.chat.ask,
+    {
+      onSuccess: (data) => {
+        setChatHistory(prev => [...prev, { role: 'assistant', content: data.answer }]);
+      },
+      onError: (error) => {
+        setChatHistory(prev => [...prev, { role: 'assistant', content: `Sorry, I encountered an error: ${error}` }]);
+      },
+    }
+  );
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -26,30 +45,49 @@ const Results: React.FC = () => {
   }, [user, isLoading, navigate]);
 
   useEffect(() => {
-    if (user && id) {
+    const state = location.state as { prediction?: XRayPredictionData; imagePreview?: string } | null;
+    if (state?.prediction) {
+      setApiPrediction(state.prediction);
+      setImagePreview(state.imagePreview || null);
+    } else if (user && id && id !== 'api') {
       const analyses = getAnalysesFromStorage(user.id);
       const found = analyses.find(a => a.id === id);
       setAnalysis(found || null);
     }
-  }, [user, id]);
+  }, [user, id, location.state]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!chatMessage.trim()) return;
-    
-    setChatHistory(prev => [
-      ...prev,
-      { role: 'user', content: chatMessage },
-      { 
-        role: 'assistant', 
-        content: `Thank you for your question about "${chatMessage}". This is a placeholder response. In the full implementation, this would be powered by Google Gemini AI to provide detailed medical insights based on your X-ray analysis and report.` 
-      }
-    ]);
+
+    const question = chatMessage;
     setChatMessage('');
+    setChatHistory(prev => [...prev, { role: 'user', content: question }]);
+
+    const context = apiPrediction
+      ? `Patient chest X-ray prediction: ${apiPrediction.prediction} (confidence: ${(apiPrediction.confidence * 100).toFixed(1)}%)`
+      : analysis
+        ? `Patient chest X-ray conditions: ${analysis.detectedConditions.join(', ')}`
+        : undefined;
+
+    await sendChatMessage(question, context);
   };
 
   if (isLoading || !user) return null;
 
-  if (!analysis) {
+  // Determine display data from either API response or mock analysis
+  const prediction = apiPrediction?.prediction || (analysis?.detectedConditions?.[0] ?? 'Unknown');
+  const confidence = apiPrediction?.confidence;
+  const isNormal = prediction === 'Normal';
+  const displayImage = apiPrediction
+    ? (apiPrediction.heatmap_path ? apiClient.getFileUrl(apiPrediction.heatmap_path) : imagePreview)
+    : analysis?.imageUrl;
+  const displayConditions = apiPrediction
+    ? [apiPrediction.prediction]
+    : analysis?.detectedConditions || [];
+  const displaySymptoms = analysis?.symptoms;
+  const displayDate = analysis ? format(new Date(analysis.createdAt), 'MMMM d, yyyy h:mm a') : format(new Date(), 'MMMM d, yyyy h:mm a');
+
+  if (!apiPrediction && !analysis) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
@@ -68,8 +106,6 @@ const Results: React.FC = () => {
     );
   }
 
-  const isNormal = analysis.detectedConditions.includes('Normal');
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -83,7 +119,6 @@ const Results: React.FC = () => {
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Left Column - Image & Report */}
           <div className="space-y-6">
-            {/* X-ray Image with Heatmap Overlay */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
@@ -93,21 +128,34 @@ const Results: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
-                  <img
-                    src={analysis.imageUrl}
-                    alt="X-ray"
-                    className="w-full h-full object-contain"
-                  />
-                  {/* Placeholder for Grad-CAM heatmap overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 via-yellow-500/10 to-transparent pointer-events-none" />
-                  <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur px-2 py-1 rounded text-xs">
-                    Grad-CAM Visualization (Mock)
-                  </div>
+                  {displayImage ? (
+                    <img
+                      src={displayImage}
+                      alt="X-ray"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      No image available
+                    </div>
+                  )}
+                  {apiPrediction?.heatmap_path && (
+                    <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur px-2 py-1 rounded text-xs">
+                      Grad-CAM Visualization
+                    </div>
+                  )}
+                  {!apiPrediction && (
+                    <>
+                      <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 via-yellow-500/10 to-transparent pointer-events-none" />
+                      <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur px-2 py-1 rounded text-xs">
+                        Grad-CAM Visualization (Mock)
+                      </div>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Diagnostic Report */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -130,27 +178,31 @@ const Results: React.FC = () => {
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">Detected Conditions:</p>
                   <div className="flex flex-wrap gap-2">
-                    {analysis.detectedConditions.map((condition) => (
-                      <Badge
-                        key={condition}
-                        variant={isNormal ? 'secondary' : 'destructive'}
-                      >
+                    {displayConditions.map((condition) => (
+                      <Badge key={condition} variant={isNormal ? 'secondary' : 'destructive'}>
                         {condition}
                       </Badge>
                     ))}
                   </div>
                 </div>
 
-                {analysis.symptoms && (
+                {confidence !== undefined && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Confidence:</p>
+                    <p className="text-sm font-medium">{(confidence * 100).toFixed(1)}%</p>
+                  </div>
+                )}
+
+                {displaySymptoms && (
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Reported Symptoms:</p>
-                    <p className="text-sm">{analysis.symptoms}</p>
+                    <p className="text-sm">{displaySymptoms}</p>
                   </div>
                 )}
 
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Analysis Date:</p>
-                  <p className="text-sm">{format(new Date(analysis.createdAt), 'MMMM d, yyyy h:mm a')}</p>
+                  <p className="text-sm">{displayDate}</p>
                 </div>
 
                 <div className="pt-4 border-t">
@@ -162,7 +214,16 @@ const Results: React.FC = () => {
                   </p>
                 </div>
 
-                <Button variant="outline" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    if (apiPrediction?.report_path) {
+                      apiService.xray.downloadReport(apiPrediction.report_path);
+                    }
+                  }}
+                  disabled={!apiPrediction?.report_path}
+                >
                   <Download className="h-4 w-4 mr-2" />
                   Download Report (PDF)
                 </Button>
@@ -195,9 +256,7 @@ const Results: React.FC = () => {
                             variant="outline"
                             size="sm"
                             className="text-xs"
-                            onClick={() => {
-                              setChatMessage(q);
-                            }}
+                            onClick={() => setChatMessage(q)}
                           >
                             {q}
                           </Button>
@@ -206,22 +265,32 @@ const Results: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  chatHistory.map((msg, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
+                  <>
+                    {chatHistory.map((msg, idx) => (
                       <div
-                        className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                          msg.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
+                        key={idx}
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
-                        <p className="text-sm">{msg.content}</p>
+                        <div
+                          className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                            msg.role === 'user'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted'
+                          }`}
+                        >
+                          <p className="text-sm">{msg.content}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+                    {isChatLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-muted rounded-lg px-4 py-2 flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <p className="text-sm text-muted-foreground">Thinking...</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -238,14 +307,15 @@ const Results: React.FC = () => {
                   }}
                   className="resize-none"
                   rows={2}
+                  disabled={isChatLoading}
                 />
-                <Button onClick={handleSendMessage} disabled={!chatMessage.trim()}>
+                <Button onClick={handleSendMessage} disabled={!chatMessage.trim() || isChatLoading}>
                   Send
                 </Button>
               </div>
 
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                Powered by Google Gemini AI (Mock)
+                Powered by Google Gemini AI
               </p>
             </CardContent>
           </Card>
