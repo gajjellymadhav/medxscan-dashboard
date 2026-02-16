@@ -8,7 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
-import { addAnalysis } from '@/data/mockAnalyses';
+import { apiService } from '@/services/apiService';
+import { useAPI } from '@/hooks/useAPI';
+import type { XRayPredictionData } from '@/types/api';
 
 const NewAnalysis: React.FC = () => {
   const navigate = useNavigate();
@@ -17,7 +19,16 @@ const NewAnalysis: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { isLoading: isSubmitting, error, execute } = useAPI<XRayPredictionData>(
+    apiService.xray.predict,
+    {
+      onSuccess: (data) => {
+        navigate('/results/api', { state: { prediction: data, imagePreview: preview } });
+      },
+      onError: () => {},
+    }
+  );
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -59,19 +70,7 @@ const NewAnalysis: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!file || !user) return;
-    
-    setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const newAnalysis = addAnalysis({
-      userId: user.id,
-      imageUrl: preview || '/placeholder.svg',
-      symptoms: symptoms || undefined,
-      detectedConditions: [],
-    });
-    
-    setIsSubmitting(false);
-    navigate(`/results/${newAnalysis.id}`);
+    await execute(file, symptoms || undefined);
   };
 
   const clearFile = () => {
@@ -202,6 +201,13 @@ const NewAnalysis: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Error Message */}
+                {error && (
+                  <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
+
                 {/* Symptoms */}
                 <div className="space-y-2">
                   <Label>Symptoms (Optional)</Label>
@@ -223,6 +229,7 @@ const NewAnalysis: React.FC = () => {
                     variant="outline"
                     onClick={() => navigate('/dashboard')}
                     className="flex-1"
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </Button>
